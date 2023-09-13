@@ -3,15 +3,24 @@ from PIL import Image, ImageTk
 from search_alg import search_alg
 from pinyin_converter import numeric_to_accent
 from split_pinyin import split_pinyin
+from pathlib import Path
 
-customtkinter.set_default_color_theme("blue")
-customtkinter.set_appearance_mode("dark")
 
 # This is a graphical Chinese dictionary program made using customtkinter
 # There is a main frame, App, which contains the Dictionary frame and the Sidebar frame.
 # In turn, the Sidebar frame contains a few buttons, 
 # and the Dictionary frame contains the Searchbar frame and the Results frame.
 # When the search button is pressed it takes the search term in the search bar, searches and populates the results frame with the results.
+
+# Firstly, if there is no config file then we create one with the default values
+config_file = Path("config.ini") #add your path lists 
+if not config_file.is_file():
+    with open('config.ini', 'a+') as f:
+        f.write("search_results_max = 30\nhistory_entries_max = 100\npinyin_type = Accented pinyin tones\ntheme = Dark mode\ncharacter_type = Simplified")
+
+customtkinter.set_default_color_theme("blue")
+customtkinter.set_appearance_mode("dark") # TODO: This should be set based on the config file
+
 
 def fix_ncolon(string): # Convert the unsightly u: into a more attractive form ü
     string = string.replace('u:','ü')
@@ -39,14 +48,14 @@ class SidebarFrame(customtkinter.CTkFrame): # This frame only contains a few but
 
         self.moon_graphic = customtkinter.CTkImage(Image.open("graphic/moon-90.png"))
         self.sun_graphic = customtkinter.CTkImage(Image.open("graphic/sun-100.png"))
-        #self.settings_graphic = customtkinter.CTkImage(Image.open("graphic/setting-100.png"))
+        self.settings_graphic = customtkinter.CTkImage(Image.open("graphic/setting-100.png"))
         self.traditional_graphic = customtkinter.CTkImage(Image.open("graphic/traditional.png"))
         self.simplified_graphic = customtkinter.CTkImage(Image.open("graphic/simplified.png"))
-        #self.history_graphic = customtkinter.CTkImage(Image.open("graphic/history-100.png"))
-        #self.camera_graphic = customtkinter.CTkImage(Image.open("graphic/camera-100.png"))
+        self.history_graphic = customtkinter.CTkImage(Image.open("graphic/history-100.png"))
+        self.camera_graphic = customtkinter.CTkImage(Image.open("graphic/camera-100.png"))
 
-        #self.settings_button = customtkinter.CTkButton(self, image=self.settings_graphic, text="", command=self.nothing, width=64, height=64)
-        #self.settings_button.grid(row=0, column=0, padx=15, pady=10, sticky="ewns")
+        self.settings_button = customtkinter.CTkButton(self, image=self.settings_graphic, text="", command=self.setting_button_callback, width=64, height=64)
+        self.settings_button.grid(row=0, column=0, padx=15, pady=10, sticky="ewns")
 
         self.appearance_mode_button = customtkinter.CTkButton(self, image=self.moon_graphic, text="", command=self.appearance_mode_button_callback, width=64, height=64)
         self.appearance_mode_button.grid(row=1, column=0, padx=15, pady=(15,10), sticky="ewns")
@@ -54,14 +63,17 @@ class SidebarFrame(customtkinter.CTkFrame): # This frame only contains a few but
         self.simplified_characters_button = customtkinter.CTkButton(self, image=self.simplified_graphic, text="", command=self.simple_characters_button_callback, width=64, height=64)
         self.simplified_characters_button.grid(row=2, column=0, padx=15, pady=10, sticky="ewns")
 
-        #self.history_button = customtkinter.CTkButton(self, image=self.history_graphic, text="", command=self.nothing, width=64, height=64)
-        #self.history_button.grid(row=3, column=0, padx=15, pady=10, sticky="ewns")
+        self.history_button = customtkinter.CTkButton(self, image=self.history_graphic, text="", command=self.nothing, width=64, height=64)
+        self.history_button.grid(row=3, column=0, padx=15, pady=10, sticky="ewns")
 
-        #self.camera_button = customtkinter.CTkButton(self, image=self.camera_graphic, text="", command=self.nothing, width=64, height=64)
-        #self.camera_button.grid(row=4, column=0, padx=15, pady=10, sticky="ewns")
+        self.camera_button = customtkinter.CTkButton(self, image=self.camera_graphic, text="", command=self.nothing, width=64, height=64)
+        self.camera_button.grid(row=4, column=0, padx=15, pady=10, sticky="ewns")
     
     def nothing(self):
         pass
+
+    def setting_button_callback(self):
+        app.create_settings_frame()
 
     def simple_characters_button_callback(self): # Toggle between simple and traditional characters
         if self.simple_characters == True:
@@ -181,6 +193,7 @@ class SingleResultFrame(customtkinter.CTkFrame): # A frame for a single result. 
         self.pinyin_display = customtkinter.CTkLabel(self, text=self.pinyin, font=("Calibri",16), wraplength=170, justify='left', anchor='w')
         self.pinyin_display.grid(row=1, column=0, padx=10, pady=(0,5), sticky="w")
 
+        # The wraplength here gets the frame width so as to stop the text from going offscreen when it is long. When the window is resized to not be fullscreen, sometimes it will do this anyway, which the -240 fixes.
         self.english_display = customtkinter.CTkLabel(self, text=self.english, font=("Calibri",16), wraplength= app.dictionary_frame.get_results_frame_width()-240, justify='left', anchor='w')
         self.english_display.grid(row=0, column=1, padx=10, pady=5, sticky="w", rowspan=2)
 
@@ -200,15 +213,85 @@ class App(customtkinter.CTk): # The main frame. All other frames are contained w
         self.dictionary_frame = DictionaryFrame(self)
         self.dictionary_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nwse")
 
-        #self.create_settings_frame()
-
     def destroy_dictionary_frame(self):
         self.dictionary_frame.destroy()
+
+    def create_dictionary_frame(self):
+        self.destroy_settings_frame()
+        self.dictionary_frame = DictionaryFrame(self)
+        self.dictionary_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nwse")
+
+    def destroy_settings_frame(self):
+        self.settings_frame.destroy()
 
     def create_settings_frame(self):
         self.destroy_dictionary_frame()
         self.settings_frame = SettingsFrame(self)
         self.settings_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nswe")
+
+class SettingsFrame(customtkinter.CTkFrame):
+
+    def __init__(self, master):
+        super().__init__(master)
+        self.grid_rowconfigure(0, weight=0)
+        self.grid_columnconfigure((0,1), weight=0)
+
+        self.no_search_label = customtkinter.CTkLabel(self, text="Number of search results to display (default is 30):", font=("Calibri",18), justify='left', anchor='w')
+        self.no_search_label.grid(row=0, column=0, padx=30, pady=(10,2), sticky="nswe")
+
+        self.no_search_entry = customtkinter.CTkEntry(self, font=("Calibri",18))  
+        self.no_search_entry.grid(row=1, column=0, padx=30, pady=2, sticky="nswe")
+
+        self.no_history_label = customtkinter.CTkLabel(self, text="Number of history entries to store (default is 100):", font=("Calibri",18), justify='left', anchor='w')
+        self.no_history_label.grid(row=2, column=0, padx=30, pady=(15,2), sticky="nswe")
+
+        self.no_history_entry = customtkinter.CTkEntry(self, font=("Calibri",18))  
+        self.no_history_entry.grid(row=3, column=0, padx=30, pady=2, sticky="nswe")
+
+        self.pinyin_type_label = customtkinter.CTkLabel(self, text="Show pinyin tones with accents, or with numbers:", font=("Calibri",18), justify='left', anchor='w')
+        self.pinyin_type_label.grid(row=4, column=0, padx=30, pady=(15,2), sticky="nswe")
+
+        self.pinyin_type_optionmenu = customtkinter.CTkOptionMenu(self, values=["Accented pinyin tones", "Numeric pinyin tones"], font=("Calibri", 18), dropdown_font=("Calibri", 18))
+        self.pinyin_type_optionmenu.grid(row=5, column=0, padx=30, pady=2, sticky="nswe")
+
+        self.theme_label = customtkinter.CTkLabel(self, text="Set the default theme to light or dark:", font=("Calibri",18), justify='left', anchor='w')
+        self.theme_label.grid(row=6, column=0, padx=30, pady=(10,2), sticky="nswe")
+
+        self.theme_optionmenu = customtkinter.CTkOptionMenu(self, values=["Dark mode", "Light mode"], font=("Calibri", 18), dropdown_font=("Calibri", 18))
+        self.theme_optionmenu.grid(row=7, column=0, padx=30, pady=2, sticky="nswe")
+
+        self.character_label = customtkinter.CTkLabel(self, text="Set the default character type:", font=("Calibri",18), justify='left', anchor='w')
+        self.character_label.grid(row=8, column=0, padx=30, pady=(15,2), sticky="nswe")
+
+        self.character_optionmenu = customtkinter.CTkOptionMenu(self, values=["Simplified", "Traditional"], font=("Calibri", 18), dropdown_font=("Calibri", 18))
+        self.character_optionmenu.grid(row=9, column=0, padx=30, pady=2, sticky="nswe")
+
+        self.save_button = customtkinter.CTkButton(self, text= "Save changes", command=self.save_changes, font=("Calibri", 22))
+        self.save_button.grid(row=10, column=0, padx=30, pady=(30,15), sticky="nswe")
+    
+        self.discard_button = customtkinter.CTkButton(self, text= "Discard changes", command=self.discard_changes, font=("Calibri", 22))
+        self.discard_button.grid(row=11, column=0, padx=30, pady=2, sticky="nswe")
+
+    def save_changes(self):
+        with open('config.ini', 'w') as f:
+            self.search_results_max = self.no_search_entry.get()
+            self.history_entries_max = self.no_history_entry.get()
+            self.pinyin_type = self.pinyin_type_optionmenu.get()
+            self.theme = self.theme_optionmenu.get()
+            self.character_type = self.character_optionmenu.get()
+            if self.search_results_max == "":
+                self.search_results_max = 30
+            if self.history_entries_max == "":
+                self.history_entries_max = 100
+            
+            write_string = "search_results_max = {0}\nhistory_entries_max = {1}\npinyin_type = {2}\ntheme = {3}\ncharacter_type = {4}".format(self.search_results_max, self.history_entries_max, self.pinyin_type, self.theme, self.character_type)
+            f.write(write_string)
+
+
+
+    def discard_changes(self):
+        app.create_dictionary_frame()
+
 
 class DictionaryFrame(customtkinter.CTkFrame): # Contains the Results and SearchBar frame
     def __init__(self, master):
