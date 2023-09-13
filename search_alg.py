@@ -6,18 +6,24 @@ from remove_numbers import remove_numbers
 
 cdb = parser.parse_cedict()
 
-def search_alg(input, lang='CHINESE'):
+# The search algorithm takes a search term, which can be Hanzi, Pinyin Numeric, Pinyin Accented
+# or English, and returns search results.
+
+def search_alg(input, lang='CHINESE'): # If no language is specified, we assume it is Chinese until we find out otherwise
+
+    # Return nothing if there is an empty search term
     if len(input) == 0:
         return [[], 'CHINESE']
 
     def search_english(input):
         results = []
+        # We first search for exact search terms (ie, word for word match), and then follow it with general search terms
         for result in match_english_exact(input):
             results.append(result)
         for result in match_english_general(input):
             temp = []
             temp.append(result)
-            for sorted_result in sort_by_key_length(temp, 'english'):
+            for sorted_result in sort_by_key_length(temp, 'english'): # We sort the results by the english length
                 results.append(sorted_result)
         return results
     
@@ -25,15 +31,17 @@ def search_alg(input, lang='CHINESE'):
         pinyin_type = detect_pinyin_type(input_pinyin)
         results = []
 
+        # If accented, we convert to numeric first. We never search accented pinyin
         if pinyin_type == 'ACCENTED':
             input_pinyin = accent_to_numeric(input_pinyin)
             pinyin_type = 'NUMERIC'
         
+        # If neither accented nor numeric, we do a nontonal search
         if pinyin_type == 'NEITHER':
            for result in match_nontonal_pinyin(input_pinyin):
                 results.append(result)
-            ## A non-tonal search. This requires a unique, separate search of the database that ignores/matches all tones
-        
+                 
+        # Perform the numeric search
         if pinyin_type == 'NUMERIC':
             for result in match_numeric_pinyin(input_pinyin):
                 results.append(result)
@@ -42,43 +50,61 @@ def search_alg(input, lang='CHINESE'):
 
     returned_lang = 'CHINESE'
     results = []
+
+    # Single hanzi search
     if (len(input) == 1) and (is_chinese_character(input)):
-        results.append(match_chinese_string_1to1(input)) #First we match a 1-1 match
+        results.append(match_chinese_string_1to1(input)) # As with English, first we do an exact, 1-to-1 search
 
         for result in match_chinese_string_phrase(input): #Then we match all the phrases that contain the character
             results.append(result)
     
+    # Search full Chinese string
     elif is_chinese_string(input):
-        results.append(match_chinese_string_1to1(input))
+        results.append(match_chinese_string_1to1(input)) # Exactly match the full phrase
         
         for char in input:
-            results.append(match_chinese_string_1to1(char))
+            results.append(match_chinese_string_1to1(char)) # Then show results for each individual constituent character
 
-        for result in match_chinese_string_phrase(input):
+        for result in match_chinese_string_phrase(input): #  For if the phrase is found within another larger string
             results.append(result)
     
-    else: #Is either pinyin, or english.
-        input_pinyin = split_pinyin(input)
+    else: #Is either pinyin, or english. We need to find out which
+
+        input_pinyin = split_pinyin(input) # Attempt to split the string as pinyin. If an INVALID response is returned, then we deduce the string is English
         if input_pinyin == 'INVALID':
-            for result in search_english(input):
+            for result in search_english(input): # Perform the english search
                 results.append(result)
                 returned_lang = 'ENGLISH'
 
         else:
-            if lang == 'CHINESE':
+            # The string has been detected as valid pinyin. This doesn't necessarily mean the string is intended to be pinyin, however
+            # For example the string 'women' is both valid pinyin and English. There are many more examples of this
+            
+            # We attempt a pinyin search IF lang is set to CHINESE. lang is set primarily by the C-E button next to the search bar
+            if lang == 'CHINESE': 
                 for result in search_pinyin(input_pinyin):
                     results.append(result)
-            if len(results) == 0: #If either the language is not chinese (by this point there would be no results), or if no results were returned by the chinese search
+            
+            # If either the language is not chinese, or if no results were returned by the chinese search,
+            # then we attempt an English search on the string
+            if len(results) == 0: 
                 for result in search_english(input):
                     results.append(result)
                     returned_lang = 'ENGLISH'
+
+                # This particular Chinese search is useful in one use case:
+                # The user has set the C-E button to E (English) but the string is in fact in Chinese (ie no English results). We override the C-E button
                 if len(results) == 0: #If the English search returned no results, then search in Chinese
                     for result in search_pinyin(input_pinyin):
                         results.append(result)
                         returned_lang = 'CHINESE'
 
 
-    return [sort_by_key_length(remove_none_from_list(results), 'english'), returned_lang]
+    return [sort_by_key_length(remove_none_from_list(results), 'english'), returned_lang] # We return our results, sorted by english def length, without empty results
+
+
+# Below here is are the actual dictionary searching functions.
+# They all essentially work the same way, iterate through the dictionary and select items that match whatever search term the functions take.
 
 def match_english_exact(string):
     results = []
@@ -147,6 +173,9 @@ def match_chinese_string_phrase(string):
                 results.append(entry)
     return results
 
+
+# Miscellaneous functions
+
 def remove_none_from_list(l): #Remove all instances of None from a list
     new_list = []
     for element in l:
@@ -156,8 +185,3 @@ def remove_none_from_list(l): #Remove all instances of None from a list
 
 def sort_by_key_length(lst, key):
     return sorted(lst, key=lambda x: len(x.get(key, "")))
-
-
-# result_list = search_alg('語言')
-# result_list = search_alg('yu3yan2neng2    li4')
-# print(remove_none_from_list(result_list))

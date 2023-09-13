@@ -1,3 +1,7 @@
+# Detects the type of pinyin of a pinyin string
+# Can be numeric, accented or neither
+# This information is important as we search for these differently
+
 accented_char = ['ā', 'á', 'ǎ', 'à', 'ē', 'é', 'ě', 'è', 'ī', 'í', 'ǐ', 'ì', 
 'ō', 'ó', 'ǒ', 'ò', 'ū', 'ú', 'ǔ', 'ù', 'ǖ', 'ǘ', 'ǚ', 'ǜ', 'Ā', 'Á', 'Ǎ', 
 'À', 'Ē', 'É', 'Ě', 'È', 'Ī', 'Í', 'Ǐ', 'Ì', 'Ō', 'Ó', 'Ǒ', 'Ò', 'Ū', 'Ú', 'Ǔ', 

@@ -1,6 +1,8 @@
 # Takes pinyin lists generated from split_pinyin, and converts them
+# Can convert bidirectionally from accented to numeric pinyin
 
 def load_corresponding_pinyin():
+    # This function loads a list of corresponding numeric and accented pinyin that can then be used to convert between the two
     with open('corresponding_pinyin.txt', 'r') as f:
         data = f.readlines()
     new_data = []
@@ -29,11 +31,3 @@ def numeric_to_accent(pinyin_list):
                 numeric_pinyin_list.append(value[1])
                 break
     return numeric_pinyin_list
-
-
-# x = ['zhè', 'shì', 'yí', 'gè', 'měi', 'lì', 'de', 'xiàn', 'tiān', 'rì', 'luò', 'de', 'jǐng', 'sè']
-# if (numeric_to_accent(accent_to_numeric(x))) == x:
-#     print("OK")
-# print(x)
-
-#x = ['zhe4', 'shi4', 'yi2', 'ge4', 'mei3', 'li4', 'de', 'xia4', 'tian1', 'ri4', 'luo4', 'de5', 'jing3', 'se4']

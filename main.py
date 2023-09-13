@@ -3,12 +3,21 @@ from PIL import Image, ImageTk
 from search_alg import search_alg
 from pinyin_converter import numeric_to_accent
 from split_pinyin import split_pinyin
-from pinyin_list_generators import fix_ncolon
 
 customtkinter.set_default_color_theme("blue")
 customtkinter.set_appearance_mode("dark")
 
-def remove_non_alphanumeric(string):
+# This is a graphical Chinese dictionary program made using customtkinter
+# There is a main frame, App, which contains the Dictionary frame and the Sidebar frame.
+# In turn, the Sidebar frame contains a few buttons, 
+# and the Dictionary frame contains the Searchbar frame and the Results frame.
+# When the search button is pressed it takes the search term in the search bar, searches and populates the results frame with the results.
+
+def fix_ncolon(string): # Convert the unsightly u: into a more attractive form ü
+    string = string.replace('u:','ü')
+    return string
+
+def remove_non_alphanumeric(string): # Removes non alpha-numeric chars from a string
     new_string = ""
     valid_chars= [
     'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
@@ -20,7 +29,7 @@ def remove_non_alphanumeric(string):
             new_string += char
     return new_string
     
-class SidebarFrame(customtkinter.CTkFrame):
+class SidebarFrame(customtkinter.CTkFrame): # This frame only contains a few buttons
     def __init__(self, master):
         super().__init__(master)
         
@@ -54,7 +63,7 @@ class SidebarFrame(customtkinter.CTkFrame):
     def nothing(self):
         pass
 
-    def simple_characters_button_callback(self):
+    def simple_characters_button_callback(self): # Toggle between simple and traditional characters
         if self.simple_characters == True:
             self.simple_characters = False
             self.simplified_characters_button.configure(image=self.traditional_graphic)
@@ -63,7 +72,7 @@ class SidebarFrame(customtkinter.CTkFrame):
             self.simple_characters = True
             self.simplified_characters_button.configure(image=self.simplified_graphic)
 
-    def appearance_mode_button_callback(self):
+    def appearance_mode_button_callback(self): # Toggle between light and dark mode
         if self.appearance_mode == "dark":
             self.appearance_mode = "light"
             self.appearance_mode_button.configure(image=self.sun_graphic)
@@ -72,11 +81,11 @@ class SidebarFrame(customtkinter.CTkFrame):
             self.appearance_mode_button.configure(image=self.moon_graphic)
         customtkinter.set_appearance_mode(self.appearance_mode)
 
-class SearchbarFrame(customtkinter.CTkFrame):
+class SearchbarFrame(customtkinter.CTkFrame): # Contains the language toggle (C-E) button, the search bar and the search button.
     def __init__(self, master):
         super().__init__(master)
 
-        self.MAX_RESULTS = 30
+        self.MAX_RESULTS = 30 # If this number is too high, the dictionary becomes too unresponsive. 30 is sort of a sweet spot
         self.current_language = 'CHINESE'
 
         self.search_graphic = customtkinter.CTkImage(Image.open("graphic/search-50.png"))
@@ -95,13 +104,13 @@ class SearchbarFrame(customtkinter.CTkFrame):
         self.search_button = customtkinter.CTkButton(self, image=self.search_graphic, text="", command=self.search_button_callback, width=64, height=60)
         self.search_button.grid(row=0, column=2, padx=(10,10), pady=10, sticky="e")
 
-    def toggle_language(self):
+    def toggle_language(self): #  C-E button function
         if self.current_language == 'CHINESE':
             self.set_language('ENGLISH')
         else:
             self.set_language('CHINESE')
     
-    def set_language(self, lang):
+    def set_language(self, lang): # Settle the language specifically (ie, don't toggle but just set)
         if lang == 'CHINESE':
             self.current_language = lang
             self.language_toggle_button.configure(image=self.language_toggle_chinese_graphic)
@@ -109,7 +118,7 @@ class SearchbarFrame(customtkinter.CTkFrame):
             self.current_language = lang
             self.language_toggle_button.configure(image=self.language_toggle_english_graphic)
 
-    def get_search(self):
+    def get_search(self): # Search button function
         app.dictionary_frame.results_frame.clear_results()
         app.dictionary_frame.refresh_results_frame()
 
@@ -119,27 +128,28 @@ class SearchbarFrame(customtkinter.CTkFrame):
         
         self.set_language(returned_search_lang)
 
-        if app.sidebar_frame.simple_characters == True:
+        if app.sidebar_frame.simple_characters == True: # Check if we are set to use traditional or simplified characters for showing the results
             writing_system = 'simplified'
         else:
             writing_system = 'traditional'
         for result in search_results:
             app.dictionary_frame.results_frame.add_result(result[writing_system], result['pinyin'], result['english'])
 
+    #Can either press search or press the search button to get results.
     def pressed_enter(self, event):
         self.get_search()
     
     def search_button_callback(self):
         self.get_search()
 
-class ResultsFrame(customtkinter.CTkScrollableFrame):
+class ResultsFrame(customtkinter.CTkScrollableFrame): # This frame is populated with results when a search from the searchbar is triggered
     def __init__(self, master):
         super().__init__(master)
 
         self.results=[]
         self.grid_columnconfigure(0, weight=1)
 
-    def add_result(self, chinese, pinyin, english):
+    def add_result(self, chinese, pinyin, english): # Add a single result. Has a field for each attribute of the CC-CEDICT dictionary
         SingleResult = SingleResultFrame(self, chinese, pinyin, english)
         SingleResult.grid(row=len(self.results), column=0, padx=10, pady=10, sticky="we")
         self.results.append(SingleResult)
@@ -149,7 +159,7 @@ class ResultsFrame(customtkinter.CTkScrollableFrame):
             result.destroy()
         self.results = []
 
-class SingleResultFrame(customtkinter.CTkFrame):
+class SingleResultFrame(customtkinter.CTkFrame): # A frame for a single result. Many of these populate a single results frame
     def __init__(self, master, chinese, pinyin, english):
         super().__init__(master)
 
@@ -174,7 +184,7 @@ class SingleResultFrame(customtkinter.CTkFrame):
         self.english_display = customtkinter.CTkLabel(self, text=self.english, font=("Calibri",16), wraplength= app.dictionary_frame.get_results_frame_width()-240, justify='left', anchor='w')
         self.english_display.grid(row=0, column=1, padx=10, pady=5, sticky="w", rowspan=2)
 
-class App(customtkinter.CTk):
+class App(customtkinter.CTk): # The main frame. All other frames are contained within this frame
     def __init__(self):
         super().__init__()
 
@@ -200,7 +210,7 @@ class App(customtkinter.CTk):
         self.settings_frame = SettingsFrame(self)
         self.settings_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nswe")
 
-class DictionaryFrame(customtkinter.CTkFrame):
+class DictionaryFrame(customtkinter.CTkFrame): # Contains the Results and SearchBar frame
     def __init__(self, master):
         super().__init__(master)
         self.grid_rowconfigure(1, weight=1)

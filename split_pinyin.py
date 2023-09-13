@@ -1,21 +1,15 @@
-def split_pinyin(string): #Original name: split_pinyin_with_numbers
-    # def get_megalist():
-    #     megalist = []
-    #     with open('corresponding_pinyin.txt', 'r') as f:
-    #         data = f.readlines()
+# We must split a string of pinyin characters into separate pinyin units (syllables).
+# Furthermore, we can use this process to deduce if a string is in English or Pinyin, because
+# if an error occurs then the string is not valid pinyin and as such we can interpret it
+# as English text.
 
-    #     for element in data:
-    #         element = element.replace('\n', '')
-    #         element = element.split(':')
-    #         for subelement in element:
-    #             if subelement not in megalist:
-    #                 subelement += '\n'
-    #                 megalist.append(subelement)
-
-    #     with open('megalist.txt', 'w',) as f:
-    #         f.writelines(megalist)
-    #         exit()
-    #     return megalist
+def split_pinyin(string):
+    # To split the pinyin, the process is as follows:
+    # 1. Remove the spaces
+    # 2. Iterate through the string, extracting valid pinyin syllables from the string
+    # and storing them in a list
+    # 3. If the string contains a part that is not valid pinyin, then it must be either 
+    # non-pinyin text or invalid pinyin.
 
     def get_megalist():
         with open('megalist.txt', 'r') as f:
@@ -34,18 +28,24 @@ def split_pinyin(string): #Original name: split_pinyin_with_numbers
 
     remaining_string = remove_spaces(string)
     while remaining_string != "":
-        x = get_first_pinyin_syllable(remaining_string, all_pinyin, 7)
+        # Next we get the first pinyin syllable from the string.
+        # We then add this syllable to the list, chop off that syllable from the string,
+        # and continue until there is no more text to be processed
+        x = get_first_pinyin_syllable(remaining_string, all_pinyin, 7) #Longest pinyin syllable possible is 7, eg: 'zhuang1'
+
         if x == 'INVALID':
             return 'INVALID'
+        
         remaining_string = remaining_string[len(x):]
         split_pinyin.append(x)
     
     return split_pinyin
 
 def get_first_pinyin_syllable(string, all_pinyin, max_length):
+    # This gets the first and longest possible pinyin syllable from the string provided. S
+    # Supports both accented and numeric pinyin
     done = False
     remaining_length = len(string)
-
 
     while done == False:
         if max_length <= remaining_length:
@@ -61,9 +61,7 @@ def get_first_pinyin_syllable(string, all_pinyin, max_length):
         if x == 0:
             return "INVALID"
 
-
-
-def remove_numbers_from_list(l): # Removes all entries from a list, which contain numbers. IMPORTANT: Removes the entries, not just the numbers from the entries
+def remove_numbers_from_list(l): # Removes all entries from a list, which contain numbers.
 
     def contains_number(string):
         for char in string:
@@ -76,10 +74,3 @@ def remove_numbers_from_list(l): # Removes all entries from a list, which contai
         if not contains_number(element):
             new_list.append(element)
     return new_list
-
-#x = 'zhèshìyígèměilìdexiàntiānrìluòdejǐngsè'
-#x = 'zheshiyigemeilidexiatianriluodejing'
-#x = 'zhe4 shi4 yi2 g e4 mei3 li4 dex ia4 tian1 ri4 lu o4de 5jin g3se4'
-# x = 'san1 ge4 dai4 biao3'
-
-# print(split_pinyin(x))
