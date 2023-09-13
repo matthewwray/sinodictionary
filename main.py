@@ -18,9 +18,33 @@ if not config_file.is_file():
     with open('config.ini', 'a+') as f:
         f.write("search_results_max = 30\nhistory_entries_max = 100\npinyin_type = Accented pinyin tones\ntheme = Dark mode\ncharacter_type = Simplified")
 
-customtkinter.set_default_color_theme("blue")
-customtkinter.set_appearance_mode("dark") # TODO: This should be set based on the config file
+def get_field_from_config(field): # Get a value from the config file. field can be: search_result_max, history_entries_max, pinyin_type, theme, character_type
+    with open('config.ini', 'r') as f:
+        config = f.readlines()
+        temp = []
 
+        for c in config:
+            c = c.split(' = ')[1]
+            c = c.replace('\n','')
+            temp.append(c)
+        config = temp  
+
+        if field == "search_results_max":
+            return int(config[0])
+    
+        if field == "history_entries_max":
+            return int(config[1])
+
+        if field == "pinyin_type":
+            return config[2]
+
+        if field == "theme":
+            return config[3]
+
+        if field == "character_type":
+            return config[4]
+
+    raise ValueError("Invalid value read request to config")
 
 def fix_ncolon(string): # Convert the unsightly u: into a more attractive form ü
     string = string.replace('u:','ü')
@@ -96,8 +120,8 @@ class SidebarFrame(customtkinter.CTkFrame): # This frame only contains a few but
 class SearchbarFrame(customtkinter.CTkFrame): # Contains the language toggle (C-E) button, the search bar and the search button.
     def __init__(self, master):
         super().__init__(master)
-
-        self.MAX_RESULTS = 30 # If this number is too high, the dictionary becomes too unresponsive. 30 is sort of a sweet spot
+        
+        self.MAX_RESULTS = get_field_from_config("search_results_max") # If this number is too high, the dictionary becomes too unresponsive. 30 is sort of a sweet spot
         self.current_language = 'CHINESE'
 
         self.search_graphic = customtkinter.CTkImage(Image.open("graphic/search-50.png"))
@@ -251,19 +275,19 @@ class SettingsFrame(customtkinter.CTkFrame):
         self.pinyin_type_label = customtkinter.CTkLabel(self, text="Show pinyin tones with accents, or with numbers:", font=("Calibri",18), justify='left', anchor='w')
         self.pinyin_type_label.grid(row=4, column=0, padx=30, pady=(15,2), sticky="nswe")
 
-        self.pinyin_type_optionmenu = customtkinter.CTkOptionMenu(self, values=["Accented pinyin tones", "Numeric pinyin tones"], font=("Calibri", 18), dropdown_font=("Calibri", 18))
+        self.pinyin_type_optionmenu = customtkinter.CTkOptionMenu(self, values=["","Accented pinyin tones", "Numeric pinyin tones"], font=("Calibri", 18), dropdown_font=("Calibri", 18))
         self.pinyin_type_optionmenu.grid(row=5, column=0, padx=30, pady=2, sticky="nswe")
 
-        self.theme_label = customtkinter.CTkLabel(self, text="Set the default theme to light or dark:", font=("Calibri",18), justify='left', anchor='w')
+        self.theme_label = customtkinter.CTkLabel(self, text="Set the default theme to light or dark (requires restart):", font=("Calibri",18), justify='left', anchor='w')
         self.theme_label.grid(row=6, column=0, padx=30, pady=(10,2), sticky="nswe")
 
-        self.theme_optionmenu = customtkinter.CTkOptionMenu(self, values=["Dark mode", "Light mode"], font=("Calibri", 18), dropdown_font=("Calibri", 18))
+        self.theme_optionmenu = customtkinter.CTkOptionMenu(self, values=["","Dark mode", "Light mode"], font=("Calibri", 18), dropdown_font=("Calibri", 18))
         self.theme_optionmenu.grid(row=7, column=0, padx=30, pady=2, sticky="nswe")
 
-        self.character_label = customtkinter.CTkLabel(self, text="Set the default character type:", font=("Calibri",18), justify='left', anchor='w')
+        self.character_label = customtkinter.CTkLabel(self, text="Set the default character type (requires restart):", font=("Calibri",18), justify='left', anchor='w')
         self.character_label.grid(row=8, column=0, padx=30, pady=(15,2), sticky="nswe")
 
-        self.character_optionmenu = customtkinter.CTkOptionMenu(self, values=["Simplified", "Traditional"], font=("Calibri", 18), dropdown_font=("Calibri", 18))
+        self.character_optionmenu = customtkinter.CTkOptionMenu(self, values=["","Simplified", "Traditional"], font=("Calibri", 18), dropdown_font=("Calibri", 18))
         self.character_optionmenu.grid(row=9, column=0, padx=30, pady=2, sticky="nswe")
 
         self.save_button = customtkinter.CTkButton(self, text= "Save changes", command=self.save_changes, font=("Calibri", 22))
@@ -273,21 +297,28 @@ class SettingsFrame(customtkinter.CTkFrame):
         self.discard_button.grid(row=11, column=0, padx=30, pady=2, sticky="nswe")
 
     def save_changes(self):
+        self.search_results_max = self.no_search_entry.get()
+        self.history_entries_max = self.no_history_entry.get()
+        self.pinyin_type = self.pinyin_type_optionmenu.get()
+        self.theme = self.theme_optionmenu.get()
+        self.character_typxe = self.character_optionmenu.get()
+
+        if (self.search_results_max == "") or (not (self.search_results_max.isdigit())):
+            self.search_results_max = get_field_from_config("search_results_max")
+        if (self.history_entries_max == "") or (not (self.history_entries_max.isdigit())):
+            self.history_entries_max = get_field_from_config("history_entries_max")
+        if self.pinyin_type == "":
+            self.pinyin_type = get_field_from_config("pinyin_type")
+        if self.theme == "":
+            self.theme = get_field_from_config("theme")
+        if self.character_type == "":
+            self.character_type = get_field_from_config("character_type")
+
         with open('config.ini', 'w') as f:
-            self.search_results_max = self.no_search_entry.get()
-            self.history_entries_max = self.no_history_entry.get()
-            self.pinyin_type = self.pinyin_type_optionmenu.get()
-            self.theme = self.theme_optionmenu.get()
-            self.character_type = self.character_optionmenu.get()
-            if self.search_results_max == "":
-                self.search_results_max = 30
-            if self.history_entries_max == "":
-                self.history_entries_max = 100
-            
             write_string = "search_results_max = {0}\nhistory_entries_max = {1}\npinyin_type = {2}\ntheme = {3}\ncharacter_type = {4}".format(self.search_results_max, self.history_entries_max, self.pinyin_type, self.theme, self.character_type)
             f.write(write_string)
-
-
+        
+        app.create_dictionary_frame()
 
     def discard_changes(self):
         app.create_dictionary_frame()
@@ -319,6 +350,14 @@ class DictionaryFrame(customtkinter.CTkFrame): # Contains the Results and Search
     def destroy_results_frame(self):
         self.results_frame.destroy()
         self.current_result_frame = [None]
+
+if get_field_from_config("theme") == "Dark mode":
+    customtkinter.set_appearance_mode("dark")
+else:
+    customtkinter.set_appearance_mode("light")
+
+customtkinter.set_default_color_theme("blue")
+
 
 app = App()
 app.mainloop()
