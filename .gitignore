@@ -2,3 +2,6 @@ __pycache__/
 .venv/
 config.ini
 cedict_ts.u8
+tts_demo.py
+demo.wav
+a

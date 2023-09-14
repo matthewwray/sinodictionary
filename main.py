@@ -207,7 +207,11 @@ class SingleResultFrame(customtkinter.CTkFrame): # A frame for a single result. 
         self.pinyin = remove_non_alphanumeric(self.pinyin)
         
         self.pinyin.replace("'",'')
-        self.pinyin = ''.join(numeric_to_accent(split_pinyin(self.pinyin)))
+
+        if get_field_from_config("pinyin_type") == "Numeric pinyin tones":
+            self.pinyin = ''.join(split_pinyin(self.pinyin))
+        else:
+            self.pinyin = ''.join(numeric_to_accent(split_pinyin(self.pinyin)))
 
         self.grid_rowconfigure((0), weight=0)
 
@@ -301,7 +305,7 @@ class SettingsFrame(customtkinter.CTkFrame):
         self.history_entries_max = self.no_history_entry.get()
         self.pinyin_type = self.pinyin_type_optionmenu.get()
         self.theme = self.theme_optionmenu.get()
-        self.character_typxe = self.character_optionmenu.get()
+        self.character_type = self.character_optionmenu.get()
 
         if (self.search_results_max == "") or (not (self.search_results_max.isdigit())):
             self.search_results_max = get_field_from_config("search_results_max")
