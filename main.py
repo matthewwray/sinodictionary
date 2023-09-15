@@ -4,6 +4,7 @@ from search_alg import search_alg
 from pinyin_converter import numeric_to_accent
 from split_pinyin import split_pinyin
 from pathlib import Path
+from time import time
 
 # This is a graphical Chinese dictionary program made using customtkinter
 # There is a main frame, App, which contains the Dictionary frame and the Sidebar frame.
@@ -12,10 +13,30 @@ from pathlib import Path
 # When the search button is pressed it takes the search term in the search bar, searches and populates the results frame with the results.
 
 # Firstly, if there is no config file then we create one with the default values
-config_file = Path("config.ini") #add your path lists 
-if not config_file.is_file():
+if not Path("config.ini").is_file():
     with open('config.ini', 'a+') as f:
         f.write("search_results_max = 30\nhistory_entries_max = 100\npinyin_type = Accented pinyin tones\ntheme = Dark mode\ncharacter_type = Simplified")
+
+# Also we need to create a history file but we don't want anything in it
+if not Path("history.csv").is_file():
+    with open('history.csv', 'w') as f:
+        pass
+
+def write_history(entry): # Write a search entry to the history file
+    htime = str(int(time()))
+    entry = entry + ',' + htime + ',' + '\n'
+    # Get all the current data in the history file. We will eventually add our new entry at the start of the list
+    with open('history.csv', 'r') as hfile:
+        hdata = hfile.readlines()
+
+    # If the history file contains more entries than the maximum specifies is allowed, then we delete the oldest entries
+    while len(hdata) >= get_field_from_config("history_entries_max"):
+        del hdata[len(hdata)-1]
+
+    hdata = [entry] + hdata
+
+    with open('history.csv', 'w') as hfile:
+        hfile.write(str(''.join(hdata)))
 
 def get_field_from_config(field): # Get a value from the config file. field can be: search_result_max, history_entries_max, pinyin_type, theme, character_type
     with open('config.ini', 'r') as f:
@@ -159,6 +180,9 @@ class SearchbarFrame(customtkinter.CTkFrame): # Contains the language toggle (C-
         app.dictionary_frame.refresh_results_frame()
 
         search = self.textbox.get()
+
+        write_history(search) # Here we add the search to our history file
+
         search_results, returned_search_lang = search_alg(search, self.current_language)
         search_results = search_results[0:self.MAX_RESULTS]
         
@@ -361,7 +385,6 @@ else:
     customtkinter.set_appearance_mode("light")
 
 customtkinter.set_default_color_theme("blue")
-
 
 app = App()
 app.mainloop()
