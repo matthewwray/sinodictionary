@@ -1,7 +1,7 @@
 # Parses a CC-Cedict Chinese-English dictionary file ('cedict_ts.u8') into a list of python dictionaries with the keys 'traditional', 'simplified', 'pinyin', 'english'
 
 def parse_cedict():
-    with open('cedict_ts.u8', 'r') as f:
+    with open('dictionary.u8', 'r') as f:
         data = f.readlines()
 
         #We add each parsed entry to this list
@@ -17,6 +17,8 @@ def parse_cedict():
             # First we reemove the trailing ' and \n at the end of each entry.
             entry = entry.rstrip('/')
             entry = entry.rstrip('\n')
+
+            entry, freq = entry.split('&&&')
 
             #Then we split the entry into:  Chinese (traditional, simplified, pinyin) and English. Later we will further split down Chinese into its constituent parts
             chinese, english = entry.split('/', 1)
@@ -38,6 +40,7 @@ def parse_cedict():
             dictionary['simplified'] = simplified
             dictionary['pinyin'] = pinyin
             dictionary['english'] = english
+            dictionary['freq'] = freq
             dictionary_list.append(dictionary)
         
         return dictionary_list

@@ -23,7 +23,7 @@ def search_alg(input, lang='CHINESE'): # If no language is specified, we assume 
         for result in match_english_general(input):
             temp = []
             temp.append(result)
-            for sorted_result in sort_by_key_length(temp, 'english'): # We sort the results by the english length
+            for sorted_result in sort_by_freq(temp, 'freq'): # We sort the results by the english length
                 results.append(sorted_result)
         return results
     
@@ -99,8 +99,7 @@ def search_alg(input, lang='CHINESE'): # If no language is specified, we assume 
                         results.append(result)
                         returned_lang = 'CHINESE'
 
-
-    return [sort_by_key_length(remove_none_from_list(results), 'english'), returned_lang] # We return our results, sorted by english def length, without empty results
+    return [sort_by_freq(remove_none_from_list(results), 'freq'), returned_lang] # We return our results, sorted by english def length, without empty results
 
 
 # Below here is are the actual dictionary searching functions.
@@ -183,5 +182,6 @@ def remove_none_from_list(l): #Remove all instances of None from a list
             new_list.append(element)
     return new_list
 
-def sort_by_key_length(lst, key):
-    return sorted(lst, key=lambda x: len(x.get(key, "")))
+def sort_by_freq(lst, key):
+    newlist = sorted(lst, key=lambda d: int(d['freq']), reverse=True) 
+    return newlist
