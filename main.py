@@ -5,6 +5,7 @@ from pinyin_converter import numeric_to_accent
 from split_pinyin import split_pinyin
 from pathlib import Path
 from time import time
+from datetime import datetime
 
 # This is a graphical Chinese dictionary program made using customtkinter
 # There is a main frame, App, which contains the Dictionary frame and the Sidebar frame.
@@ -37,6 +38,15 @@ def write_history(entry): # Write a search entry to the history file
 
     with open('history.csv', 'w') as hfile:
         hfile.write(str(''.join(hdata)))
+    
+def get_history():
+    with open('history.csv', 'r') as hfile:
+        hdata = hfile.readlines()
+    
+    for i in range(len(hdata)):
+        hdata[i] = hdata[i].split(',')
+    
+    return hdata
 
 def get_field_from_config(field): # Get a value from the config file. field can be: search_result_max, history_entries_max, pinyin_type, theme, character_type
     with open('config.ini', 'r') as f:
@@ -97,7 +107,7 @@ class SidebarFrame(customtkinter.CTkFrame): # This frame only contains a few but
         self.traditional_graphic = customtkinter.CTkImage(Image.open("graphic/traditional.png"))
         self.simplified_graphic = customtkinter.CTkImage(Image.open("graphic/simplified.png"))
         self.history_graphic = customtkinter.CTkImage(Image.open("graphic/history-100.png"))
-        self.camera_graphic = customtkinter.CTkImage(Image.open("graphic/camera-100.png"))
+        #self.camera_graphic = customtkinter.CTkImage(Image.open("graphic/camera-100.png"))
 
         self.settings_button = customtkinter.CTkButton(self, image=self.settings_graphic, text="", command=self.setting_button_callback, width=64, height=64)
         self.settings_button.grid(row=0, column=0, padx=15, pady=10, sticky="ewns")
@@ -108,17 +118,20 @@ class SidebarFrame(customtkinter.CTkFrame): # This frame only contains a few but
         self.simplified_characters_button = customtkinter.CTkButton(self, image=self.simplified_graphic, text="", command=self.simple_characters_button_callback, width=64, height=64)
         self.simplified_characters_button.grid(row=2, column=0, padx=15, pady=10, sticky="ewns")
 
-        self.history_button = customtkinter.CTkButton(self, image=self.history_graphic, text="", command=self.nothing, width=64, height=64)
+        self.history_button = customtkinter.CTkButton(self, image=self.history_graphic, text="", command=self.history_button_callback, width=64, height=64)
         self.history_button.grid(row=3, column=0, padx=15, pady=10, sticky="ewns")
 
-        self.camera_button = customtkinter.CTkButton(self, image=self.camera_graphic, text="", command=self.nothing, width=64, height=64)
-        self.camera_button.grid(row=4, column=0, padx=15, pady=10, sticky="ewns")
+        #self.camera_button = customtkinter.CTkButton(self, image=self.camera_graphic, text="", command=self.nothing, width=64, height=64)
+        #self.camera_button.grid(row=4, column=0, padx=15, pady=10, sticky="ewns")
     
     def nothing(self):
         pass
 
     def setting_button_callback(self):
         app.create_settings_frame()
+
+    def history_button_callback(self):
+        app.create_history_frame()
 
     def simple_characters_button_callback(self): # Toggle between simple and traditional characters
         if self.simple_characters == True:
@@ -280,6 +293,56 @@ class App(customtkinter.CTk): # The main frame. All other frames are contained w
         self.destroy_dictionary_frame()
         self.settings_frame = SettingsFrame(self)
         self.settings_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nswe")
+
+    def create_history_frame(self):
+        self.destroy_dictionary_frame()
+        self.settings_frame = HistoryFrame(self)
+        self.settings_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nswe")
+
+
+
+class HistoryFrame(customtkinter.CTkFrame):
+    def __init__(self, master):
+        super().__init__(master)
+
+        self.results=[]
+        self.grid_columnconfigure(0, weight=1)
+
+        self.hdata = get_history()
+        self.position = 1
+
+        self.exit_history_button = customtkinter.CTkButton(self, text= "Exit history", command=self.exit_history_callback, font=("Calibri", 22))
+        self.exit_history_button.grid(row=0, column=0, padx=30, pady=(30,15), sticky="nswe")
+
+        for self.entry in self.hdata:
+            self.add_result(self.entry[0], self.entry[1], self.position)
+            self.position += 1
+
+    def exit_history_callback(self):
+        self.destroy()
+
+    def add_result(self, searchterm, time, position): # Add a single result. Has a field for each attribute of the CC-CEDICT dictionary
+        SingleResult = SingleHistoryFrame(self, searchterm, time)
+        SingleResult.grid(row=position, column=0, padx=10, pady=10, sticky="we")
+        self.results.append(SingleResult)
+
+class SingleHistoryFrame(customtkinter.CTkFrame): # A frame for a single result. Many of these populate a single results frame
+    def __init__(self, master, searchterm, time):
+        super().__init__(master)
+
+        self.searchterm = searchterm
+        self.time = datetime.utcfromtimestamp(int(time)).strftime('%Y-%m-%d %H:%M:%S')
+        self.time = self.time.replace('\n', '')
+        self.time = self.time + " UTC"
+
+
+        self.grid_rowconfigure((0), weight=0)
+
+        self.searchterm_display = customtkinter.CTkLabel(self, text=self.searchterm, font=("Calibri",24), wraplength=170, justify='left', width=170, anchor='w')
+        self.searchterm_display.grid(row=0, column=0, padx=(10, 20), pady=(5,0), sticky="w")
+
+        self.time_display = customtkinter.CTkLabel(self, text=self.time, font=("Calibri",16), wraplength=240, justify='left', anchor='w')
+        self.time_display.grid(row=1, column=0, padx=10, pady=(0,5), sticky="w")
 
 class SettingsFrame(customtkinter.CTkFrame):
 
