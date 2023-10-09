@@ -319,6 +319,7 @@ class HistoryFrame(customtkinter.CTkFrame):
             self.position += 1
 
     def exit_history_callback(self):
+        app.create_dictionary_frame()
         self.destroy()
 
     def add_result(self, searchterm, time, position): # Add a single result. Has a field for each attribute of the CC-CEDICT dictionary
