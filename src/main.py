@@ -246,9 +246,9 @@ class SingleResultFrame(customtkinter.CTkFrame): # A frame for a single result. 
         else:
             self.pinyin = ''.join(numeric_to_accent(split_pinyin(self.pinyin)))
 
-        self.grid_rowconfigure((0), weight=0)
+        self.grid_rowconfigure((0), weight=1)
 
-        self.chinese_display = customtkinter.CTkLabel(self, text=self.chinese, font=("Calibri",24), wraplength=170, justify='left', width=170, anchor='w') # 是
+        self.chinese_display = customtkinter.CTkLabel(self, text=self.chinese, font=("Calibri",22), wraplength=170, justify='left', width=170, anchor='w') # 是
         self.chinese_display.grid(row=0, column=0, padx=(10, 20), pady=(5,0), sticky="w")
 
         self.pinyin_display = customtkinter.CTkLabel(self, text=self.pinyin, font=("Calibri",16), wraplength=170, justify='left', anchor='w')
